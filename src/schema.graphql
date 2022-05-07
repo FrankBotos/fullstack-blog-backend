@@ -18,6 +18,7 @@ type Query {
 
   posts: [Post!]!
   post(id: ID!): Post!
+  postslug(slug: String!): Post!
 }
 
 type Mutation {

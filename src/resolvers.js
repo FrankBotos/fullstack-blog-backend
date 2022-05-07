@@ -13,6 +13,9 @@ const resolvers = {
     post: (parent, { id }, context, info) => {
       return posts.find(post => post.id == id);
     },
+    postslug: (parent, { slug }, context, info) => {
+      return posts.find(post => post.slug == slug);
+    },
     posts: (parent, args, context, info) => {
       return posts;
     }
