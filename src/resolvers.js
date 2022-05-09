@@ -16,6 +16,10 @@ const resolvers = {
     postslug: (parent, { slug }, context, info) => {
       return posts.find(post => post.slug == slug);
     },
+    postuserid: (parent, { userid }, context, info) => {
+      //console.log(posts.filter(post => post.userid == userid))
+      return posts.filter(post => post.userid == userid);
+    },
     posts: (parent, args, context, info) => {
       return posts;
     }

@@ -19,6 +19,7 @@ type Query {
   posts: [Post!]!
   post(id: ID!): Post!
   postslug(slug: String!): Post!
+  postuserid(userid: Int!): [Post!]!
 }
 
 type Mutation {
