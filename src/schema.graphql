@@ -3,6 +3,7 @@ type User {
   name: String!
   email: String!
   age: Int
+  uniquenickname: String!
 }
 
 type Post {
@@ -15,6 +16,7 @@ type Post {
 type Query {
   users: [User!]!
   user(id: ID!): User!
+  userslug(slug: String!): User!
 
   posts: [Post!]!
   post(id: ID!): Post!

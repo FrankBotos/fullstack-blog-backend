@@ -9,6 +9,9 @@ const resolvers = {
     users: (parent, args, context, info) => {
       return users;
     },
+    userslug: (parent, { slug }, context, info) => {
+      return users.find(user => user.uniquenickname == slug);
+    },
 
     post: (parent, { id }, context, info) => {
       return posts.find(post => post.id == id);
