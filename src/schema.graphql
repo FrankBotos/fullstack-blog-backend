@@ -8,6 +8,7 @@ type User {
 
 type Post {
   id: ID!
+  userid: Int!
   title: String!
   content: String!
   slug: String!
@@ -21,16 +22,16 @@ type Query {
   posts: [Post!]!
   post(id: ID!): Post!
   postslug(slug: String!): Post!
-  postuserid(userid: Int!): [Post!]!
+  postuserid(userid: ID!): [Post!]!
 }
 
 type Mutation {
-  createUser(id: ID!, name: String!, email: String!, age: Int): User!
+  createUser(id: ID!, name: String!, email: String!, age: Int, uniquenickname: String!): User!
   updateUser(id: ID!, name: String, email: String, age: Int): User!
   deleteUser(id: ID!): User!
 
 
-  createPost(id: ID!, title: String!, content: String!, slug: String!): Post!
+  createPost(id: ID!, userid: ID!, title: String!, content: String!, slug: String!): Post!
   updatePost(id: ID!, title: String!, content: String!, slug: String!): Post!
   deletePost(id: ID!): Post!
 }

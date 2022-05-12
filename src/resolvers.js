@@ -29,8 +29,8 @@ const resolvers = {
   },
 
   Mutation: {
-    createUser: (parent, { id, name, email, age }, context, info) => {
-      const newUser = { id, name, email, age };
+    createUser: (parent, { id, name, email, age, uniquenickname }, context, info) => {
+      const newUser = { id, name, email, age, uniquenickname };
 
       users.push(newUser);
 
@@ -46,7 +46,9 @@ const resolvers = {
       return newUser;
     },
     deleteUser: (parent, { id }, context, info) => {
-      const userIndex = users.findIndex(user => user.id === id);
+      
+      const userIndex = users.findIndex(user => user.id == id);
+      //console.log(userIndex);
 
       if (userIndex === -1) throw new Error("User not found.");
 
@@ -55,8 +57,8 @@ const resolvers = {
       return deletedUsers[0];
     },
 
-    createPost: (parent, { id, title, content, slug }, context, info) => {
-      const newPost = { id, title, content, slug };
+    createPost: (parent, { id, userid, title, content, slug }, context, info) => {
+      const newPost = { id, userid, title, content, slug };
       posts.push(newPost);
       return newPost;
     },
@@ -70,6 +72,7 @@ const resolvers = {
       return newPost;
     },
     deletePost: (parent, { id }, context, info) => {
+      
       const postIndex = posts.findIndex(post => post.id === id);
 
       if (postIndex === -1) throw new Error("Post not found.");
