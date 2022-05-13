@@ -12,6 +12,7 @@ type Post {
   title: String!
   content: String!
   slug: String!
+  lastupdate: String
 }
 
 type Query {

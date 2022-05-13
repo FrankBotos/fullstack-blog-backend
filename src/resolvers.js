@@ -58,22 +58,31 @@ const resolvers = {
     },
 
     createPost: (parent, { id, userid, title, content, slug }, context, info) => {
-      const newPost = { id, userid, title, content, slug };
+      var lastupdate = new Date(Date.now()).toDateString();
+      //console.log(updateTime);
+
+
+      const newPost = { id, userid, title, content, slug, lastupdate };
       posts.push(newPost);
       return newPost;
     },
     updatePost: (parent, { id, title, content, slug }, context, info) => {
-      let newPost = posts.find(post => post.id === id);
+
+      var lastupdate = new Date(Date.now()).toDateString();
+
+      //console.log('ran update with' + id + ' ' + content + ' ' + slug);
+      let newPost = posts.find(post => post.id == id);
 
       newPost.title = title;
       newPost.content = content;
       newPost.slug = slug;
+      newPost.lastupdate = lastupdate;
 
       return newPost;
     },
     deletePost: (parent, { id }, context, info) => {
       
-      const postIndex = posts.findIndex(post => post.id === id);
+      const postIndex = posts.findIndex(post => post.id == id);
 
       if (postIndex === -1) throw new Error("Post not found.");
 
