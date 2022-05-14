@@ -531,6 +531,11 @@ const resolvers = {
         age,
         uniquenickname
       };
+      _db__WEBPACK_IMPORTED_MODULE_0__["users"].map(user => {
+        if (newUser.uniquenickname == user.uniquenickname) {
+          throw new Error("Sorry, a user with that unique url already exists.");
+        }
+      });
       _db__WEBPACK_IMPORTED_MODULE_0__["users"].push(newUser);
       return newUser;
     },
@@ -572,6 +577,14 @@ const resolvers = {
         slug,
         lastupdate
       };
+      const userPosts = _db__WEBPACK_IMPORTED_MODULE_0__["posts"].filter(blogpost => {
+        return blogpost.userid == userid;
+      });
+      userPosts.map(blogpost => {
+        if (blogpost.slug == slug) {
+          throw new Error("Please use a unique post title.");
+        }
+      });
       _db__WEBPACK_IMPORTED_MODULE_0__["posts"].push(newPost);
       return newPost;
     },
@@ -584,6 +597,17 @@ const resolvers = {
       var lastupdate = new Date(Date.now()).toDateString(); //console.log('ran update with' + id + ' ' + content + ' ' + slug);
 
       let newPost = _db__WEBPACK_IMPORTED_MODULE_0__["posts"].find(post => post.id == id);
+      const userPosts = _db__WEBPACK_IMPORTED_MODULE_0__["posts"].filter(blogpost => {
+        return blogpost.userid == newPost.userid;
+      });
+      const userPostsMinusCurrent = userPosts.filter(blogpost => {
+        return blogpost.slug != newPost.slug;
+      });
+      userPostsMinusCurrent.map(blogpost => {
+        if (blogpost.slug == slug) {
+          throw new Error("A previous post has that title! Please use a unique post title.");
+        }
+      });
       newPost.title = title;
       newPost.content = content;
       newPost.slug = slug;

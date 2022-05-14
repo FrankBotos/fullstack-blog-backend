@@ -32,6 +32,14 @@ const resolvers = {
     createUser: (parent, { id, name, email, age, uniquenickname }, context, info) => {
       const newUser = { id, name, email, age, uniquenickname };
 
+      users.map((user)=>{
+        if (newUser.uniquenickname == user.uniquenickname)
+        {
+          
+          throw new Error("Sorry, a user with that unique url already exists.");
+        }
+      })
+
       users.push(newUser);
 
       return newUser;
@@ -61,8 +69,21 @@ const resolvers = {
       var lastupdate = new Date(Date.now()).toDateString();
       //console.log(updateTime);
 
+      
+
 
       const newPost = { id, userid, title, content, slug, lastupdate };
+
+      const userPosts = posts.filter((blogpost)=>{
+        return blogpost.userid == userid;
+      });
+      userPosts.map((blogpost)=>{
+        if (blogpost.slug ==slug){
+          throw new Error("Please use a unique post title.");
+        }
+      })
+
+
       posts.push(newPost);
       return newPost;
     },
@@ -72,6 +93,22 @@ const resolvers = {
 
       //console.log('ran update with' + id + ' ' + content + ' ' + slug);
       let newPost = posts.find(post => post.id == id);
+
+      
+
+      const userPosts = posts.filter((blogpost)=>{
+        return blogpost.userid == newPost.userid;
+      });
+
+      const userPostsMinusCurrent = userPosts.filter((blogpost)=>{
+        return blogpost.slug != newPost.slug;
+      });
+      
+      userPostsMinusCurrent.map((blogpost)=>{
+        if (blogpost.slug ==slug){
+          throw new Error("A previous post has that title! Please use a unique post title.");
+        }
+      })
 
       newPost.title = title;
       newPost.content = content;
