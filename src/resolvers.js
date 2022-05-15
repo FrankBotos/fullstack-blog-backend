@@ -69,8 +69,7 @@ const resolvers = {
       var lastupdate = new Date(Date.now()).toDateString();
       //console.log(updateTime);
 
-      
-
+      //console.log('ran with' + content);
 
       const newPost = { id, userid, title, content, slug, lastupdate };
 

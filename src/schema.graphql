@@ -8,7 +8,7 @@ type User {
 
 type Post {
   id: ID!
-  userid: Int!
+  userid: ID!
   title: String!
   content: String!
   slug: String!

@@ -12,3 +12,9 @@ export let users = [
     { id: 5, userid: 3, title: "ASDF Post", content: "This is content for blog post 5", slug: "asdf-post", lastupdate: "Wed May 11 2022" },
     { id: 6, userid: 2, title: "Another Entry", content: "This is content for blog post 6", slug: "another-entry", lastupdate: "Wed May 11 2022" },
   ];  
+
+  export let comments  = [
+    { id: 1, userid: 2, postid: 5, content: "This is content for comment 1", lastupdate: "Wed May 11 2022" },
+    { id: 2, userid: 2, postid: 3, content: "This is content for comment 2", lastupdate: "Wed May 11 2022" },
+    { id: 3, userid: 3, postid: 2, content: "This is content for comment 3", lastupdate: "Wed May 11 2022" },
+  ]; 
