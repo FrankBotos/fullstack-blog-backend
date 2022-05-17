@@ -1,4 +1,4 @@
-import { users, posts } from "./db";
+import { users, posts, comments } from "./db";
 
 const resolvers = {
 
@@ -25,7 +25,13 @@ const resolvers = {
     },
     posts: (parent, args, context, info) => {
       return posts;
-    }
+    },
+    comments: (parent, args, context, info) => {
+      return comments;
+    },
+    commentsbypostid: (parent, { postid }, context, info) => {
+      return comments.filter(comment => comment.postid == postid);
+    },
   },
 
   Mutation: {
@@ -125,7 +131,31 @@ const resolvers = {
       const deletedPosts = posts.splice(postIndex, 1);
 
       return deletedPosts[0];
-    }
+    },
+    createComment: (parent, { id, userid, postid, content }, context, info) => {
+      var lastupdate = new Date(Date.now()).toDateString();
+      //console.log(updateTime);
+
+      //console.log('ran with' + content);
+
+      const newComment = { id, userid, postid, content, lastupdate };
+      comments.push(newComment);
+
+      return newComment;
+    },
+    deleteComment: (parent, { id }, context, info) => {
+      
+      const commentIndex = comments.findIndex(comment => comment.id == id);
+
+      if (commentIndex === -1) throw new Error("Comment not found.");
+
+      const deletedComments = comments.splice(commentIndex, 1);
+
+      
+
+      return deletedComments[0];
+    },
+
 
 
   }
