@@ -398,7 +398,7 @@ webpackContext.id = "./src sync recursive ^\\.\\/(schema|schema\\/index)\\.(gql|
 /*!*******************!*\
   !*** ./src/db.js ***!
   \*******************/
-/*! exports provided: users, posts, comments */
+/*! exports provided: users, posts, comments, bookmarks, favoriteUsers */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -406,6 +406,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "users", function() { return users; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "posts", function() { return posts; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "comments", function() { return comments; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "bookmarks", function() { return bookmarks; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "favoriteUsers", function() { return favoriteUsers; });
 let users = [{
   id: 1,
   name: "John Doe",
@@ -431,42 +433,48 @@ let posts = [{
   title: "Blog Post 1",
   content: "This is content for blog post 1",
   slug: "blog-post-1",
-  lastupdate: "Wed May 11 2022"
+  lastupdate: "Wed May 11 2022",
+  views: 125
 }, {
   id: 2,
   userid: 2,
   title: "Blog Post 2",
   content: "This is content for blog post 2",
   slug: "blog-post-2",
-  lastupdate: "Wed May 11 2022"
+  lastupdate: "Wed May 11 2022",
+  views: 0
 }, {
   id: 3,
   userid: 3,
   title: "Blog Post 3",
   content: "This is content for blog post 3",
   slug: "blog-post-3",
-  lastupdate: "Wed May 11 2022"
+  lastupdate: "Wed May 11 2022",
+  views: 0
 }, {
   id: 4,
   userid: 3,
   title: "Test Post",
   content: "This is content for blog post 4",
   slug: "test-post",
-  lastupdate: "Wed May 11 2022"
+  lastupdate: "Wed May 11 2022",
+  views: 0
 }, {
   id: 5,
   userid: 3,
   title: "ASDF Post",
   content: "This is content for blog post 5",
   slug: "asdf-post",
-  lastupdate: "Wed May 11 2022"
+  lastupdate: "Wed May 11 2022",
+  views: 0
 }, {
   id: 6,
   userid: 2,
   title: "Another Entry",
   content: "This is content for blog post 6",
   slug: "another-entry",
-  lastupdate: "Wed May 11 2022"
+  lastupdate: "Wed May 11 2022",
+  views: 0
 }];
 let comments = [{
   id: 1,
@@ -510,6 +518,40 @@ let comments = [{
   postid: 1,
   content: "This is content for comment 7",
   lastupdate: "Wed May 12 2022"
+}];
+let bookmarks = [{
+  id: 1,
+  userid: 1,
+  postid: 2
+}, {
+  id: 2,
+  userid: 1,
+  postid: 3
+}, {
+  id: 3,
+  userid: 2,
+  postid: 5
+}, {
+  id: 4,
+  userid: 2,
+  postid: 2
+}];
+let favoriteUsers = [{
+  id: 1,
+  userid: 1,
+  favoriteuserid: 2
+}, {
+  id: 2,
+  userid: 1,
+  favoriteuserid: 3
+}, {
+  id: 3,
+  userid: 2,
+  favoriteuserid: 3
+}, {
+  id: 4,
+  userid: 2,
+  favoriteuserid: 1
 }];
 
 /***/ }),
@@ -566,6 +608,11 @@ const resolvers = {
       postid
     }, context, info) => {
       return _db__WEBPACK_IMPORTED_MODULE_0__["comments"].filter(comment => comment.postid == postid);
+    },
+    bookmarks: (parent, {
+      userid
+    }, context, info) => {
+      return _db__WEBPACK_IMPORTED_MODULE_0__["bookmarks"].filter(bookmark => bookmark.userid == userid);
     }
   },
   Mutation: {
@@ -609,6 +656,56 @@ const resolvers = {
       const userIndex = _db__WEBPACK_IMPORTED_MODULE_0__["users"].findIndex(user => user.id == id); //console.log(userIndex);
 
       if (userIndex === -1) throw new Error("User not found.");
+
+      async function deleteAssociatedData() {
+        //if a user is deleted, delete their bookmarks, their posts, their comments, and their favorited users
+        //1a.delete all bookmarks made by all users that are associated with their posts
+        const usersPosts = _db__WEBPACK_IMPORTED_MODULE_0__["posts"].filter(post => {
+          return post.userid == id;
+        });
+        usersPosts.map(post => {
+          const bookmarksAfterAssociatedDelete = _db__WEBPACK_IMPORTED_MODULE_0__["bookmarks"].filter(bm => {
+            return post.id != bm.postid;
+          });
+
+          if (bookmarksAfterAssociatedDelete.length != 0) {
+            _db__WEBPACK_IMPORTED_MODULE_0__["bookmarks"].splice(0, _db__WEBPACK_IMPORTED_MODULE_0__["bookmarks"].length, ...bookmarksAfterAssociatedDelete);
+          }
+        }); //1b.delete their bookmarks
+
+        const bookmarksAfterDelete = _db__WEBPACK_IMPORTED_MODULE_0__["bookmarks"].filter(bm => {
+          return bm.userid != id;
+        });
+        _db__WEBPACK_IMPORTED_MODULE_0__["bookmarks"].splice(0, _db__WEBPACK_IMPORTED_MODULE_0__["bookmarks"].length, ...bookmarksAfterDelete); //2a.delete any favorite user entries that contained their account
+
+        _db__WEBPACK_IMPORTED_MODULE_0__["users"].map(user => {
+          const favoriteUsersAfterAssociatedDelete = _db__WEBPACK_IMPORTED_MODULE_0__["favoriteUsers"].filter(fu => {
+            return fu.favoriteuserid != id;
+          });
+
+          if (favoriteUsersAfterAssociatedDelete.length != 0) {
+            _db__WEBPACK_IMPORTED_MODULE_0__["favoriteUsers"].splice(0, _db__WEBPACK_IMPORTED_MODULE_0__["favoriteUsers"].length, ...favoriteUsersAfterAssociatedDelete);
+          }
+        }); //2b.delete their favorite user entries
+
+        const favoriteUsersAfterDelete = _db__WEBPACK_IMPORTED_MODULE_0__["favoriteUsers"].filter(fu => {
+          return fu.userid != id;
+        });
+        _db__WEBPACK_IMPORTED_MODULE_0__["favoriteUsers"].splice(0, _db__WEBPACK_IMPORTED_MODULE_0__["favoriteUsers"].length, ...favoriteUsersAfterDelete); //3.delete their comments
+
+        const commentsAfterDelete = _db__WEBPACK_IMPORTED_MODULE_0__["comments"].filter(comment => {
+          return comment.userid != id;
+        });
+        _db__WEBPACK_IMPORTED_MODULE_0__["comments"].splice(0, _db__WEBPACK_IMPORTED_MODULE_0__["comments"].length, ...commentsAfterDelete); //4a.delete comments from users associated with their posts
+        //4b.delete their posts
+
+        const postsAfterDelete = _db__WEBPACK_IMPORTED_MODULE_0__["posts"].filter(post => {
+          return post.userid != id;
+        });
+        _db__WEBPACK_IMPORTED_MODULE_0__["posts"].splice(0, _db__WEBPACK_IMPORTED_MODULE_0__["posts"].length, ...postsAfterDelete);
+      }
+
+      deleteAssociatedData();
       const deletedUsers = _db__WEBPACK_IMPORTED_MODULE_0__["users"].splice(userIndex, 1);
       return deletedUsers[0];
     },
@@ -622,13 +719,15 @@ const resolvers = {
       var lastupdate = new Date(Date.now()).toDateString(); //console.log(updateTime);
       //console.log('ran with' + content);
 
+      var views = 0;
       const newPost = {
         id,
         userid,
         title,
         content,
         slug,
-        lastupdate
+        lastupdate,
+        views
       };
       const userPosts = _db__WEBPACK_IMPORTED_MODULE_0__["posts"].filter(blogpost => {
         return blogpost.userid == userid;
@@ -701,6 +800,22 @@ const resolvers = {
       if (commentIndex === -1) throw new Error("Comment not found.");
       const deletedComments = _db__WEBPACK_IMPORTED_MODULE_0__["comments"].splice(commentIndex, 1);
       return deletedComments[0];
+    },
+    incrementViews: (parent, {
+      postid
+    }, context, info) => {
+      const postRef = _db__WEBPACK_IMPORTED_MODULE_0__["posts"].find(post => post.id == postid);
+      postRef.views++;
+      return postRef;
+    },
+    deleteBookmark: (parent, {
+      id
+    }, context, info) => {
+      const bmIndex = _db__WEBPACK_IMPORTED_MODULE_0__["bookmarks"].findIndex(bm => bm.id == id); //console.log(bmIndex);
+
+      if (bmIndex === -1) throw new Error("Bookmark not found.");
+      const bookmarksAfterDelete = _db__WEBPACK_IMPORTED_MODULE_0__["bookmarks"].splice(bmIndex, 1);
+      return bookmarksAfterDelete[0];
     }
   }
 };
@@ -716,8 +831,8 @@ const resolvers = {
 /***/ (function(module, exports) {
 
 
-    var doc = {"kind":"Document","definitions":[{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"User"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"id"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"name"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"email"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"age"},"arguments":[],"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"uniquenickname"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"Post"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"id"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"userid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"title"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"content"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"slug"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"lastupdate"},"arguments":[],"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"Comment"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"id"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"userid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"postid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"content"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"lastupdate"},"arguments":[],"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"Query"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"users"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"user"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"userslug"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"slug"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"posts"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"post"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"postslug"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"slug"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"postuserid"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"userid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"comments"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Comment"}}}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"commentsbypostid"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"postid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Comment"}}}}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"Mutation"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"createUser"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"name"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"email"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"age"},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"uniquenickname"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"updateUser"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"name"},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"email"},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"age"},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"deleteUser"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"createPost"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"userid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"title"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"content"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"slug"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"updatePost"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"title"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"content"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"slug"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"deletePost"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"createComment"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"userid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"postid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"content"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Comment"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"deleteComment"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Comment"}}},"directives":[]}]}],"loc":{"start":0,"end":1155}};
-    doc.loc.source = {"body":"type User {\r\n  id: ID!\r\n  name: String!\r\n  email: String!\r\n  age: Int\r\n  uniquenickname: String!\r\n}\r\n\r\ntype Post {\r\n  id: ID!\r\n  userid: ID!\r\n  title: String!\r\n  content: String!\r\n  slug: String!\r\n  lastupdate: String\r\n}\r\n\r\ntype Comment {\r\n  id: ID!\r\n  userid: ID!\r\n  postid: ID!\r\n  content: String!\r\n  lastupdate: String\r\n}\r\n\r\ntype Query {\r\n  users: [User!]!\r\n  user(id: ID!): User!\r\n  userslug(slug: String!): User!\r\n\r\n  posts: [Post!]!\r\n  post(id: ID!): Post!\r\n  postslug(slug: String!): Post!\r\n  postuserid(userid: ID!): [Post!]!\r\n\r\n  comments: [Comment!]!\r\n  commentsbypostid(postid: ID!): [Comment!]!\r\n\r\n\r\n}\r\n\r\ntype Mutation {\r\n  createUser(id: ID!, name: String!, email: String!, age: Int, uniquenickname: String!): User!\r\n  updateUser(id: ID!, name: String, email: String, age: Int): User!\r\n  deleteUser(id: ID!): User!\r\n\r\n\r\n  createPost(id: ID!, userid: ID!, title: String!, content: String!, slug: String!): Post!\r\n  updatePost(id: ID!, title: String!, content: String!, slug: String!): Post!\r\n  deletePost(id: ID!): Post!\r\n\r\n  createComment(id: ID!, userid: ID!, postid: ID!, content: String!): Comment!\r\n  deleteComment(id: ID!): Comment!\r\n}\r\n","name":"GraphQL request","locationOffset":{"line":1,"column":1}};
+    var doc = {"kind":"Document","definitions":[{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"User"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"id"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"name"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"email"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"age"},"arguments":[],"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"uniquenickname"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"Post"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"id"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"userid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"title"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"content"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"slug"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"lastupdate"},"arguments":[],"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"views"},"arguments":[],"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"Comment"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"id"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"userid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"postid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"content"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"lastupdate"},"arguments":[],"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"Bookmark"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"id"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"userid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"postid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"FavoriteUser"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"id"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"userid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"favoriteuserid"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"Query"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"users"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"user"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"userslug"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"slug"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"posts"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"post"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"postslug"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"slug"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"postuserid"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"userid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"comments"},"arguments":[],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Comment"}}}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"commentsbypostid"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"postid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Comment"}}}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"bookmarks"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"userid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Bookmark"}}}}},"directives":[]}]},{"kind":"ObjectTypeDefinition","name":{"kind":"Name","value":"Mutation"},"interfaces":[],"directives":[],"fields":[{"kind":"FieldDefinition","name":{"kind":"Name","value":"createUser"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"name"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"email"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"age"},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"uniquenickname"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"updateUser"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"name"},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"email"},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"age"},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"deleteUser"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"User"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"createPost"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"userid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"title"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"content"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"slug"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"updatePost"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"title"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"content"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"slug"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"deletePost"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"createComment"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"userid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"postid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]},{"kind":"InputValueDefinition","name":{"kind":"Name","value":"content"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Comment"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"deleteComment"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Comment"}}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"incrementViews"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"postid"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NamedType","name":{"kind":"Name","value":"Post"}},"directives":[]},{"kind":"FieldDefinition","name":{"kind":"Name","value":"deleteBookmark"},"arguments":[{"kind":"InputValueDefinition","name":{"kind":"Name","value":"id"},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},"directives":[]}],"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Bookmark"}}},"directives":[]}]}],"loc":{"start":0,"end":1426}};
+    doc.loc.source = {"body":"type User {\r\n  id: ID!\r\n  name: String!\r\n  email: String!\r\n  age: Int\r\n  uniquenickname: String!\r\n}\r\n\r\ntype Post {\r\n  id: ID!\r\n  userid: ID!\r\n  title: String!\r\n  content: String!\r\n  slug: String!\r\n  lastupdate: String\r\n  views: Int\r\n}\r\n\r\ntype Comment {\r\n  id: ID!\r\n  userid: ID!\r\n  postid: ID!\r\n  content: String!\r\n  lastupdate: String\r\n}\r\n\r\ntype Bookmark {\r\n  id: ID!\r\n  userid: ID!\r\n  postid: ID!\r\n}\r\n\r\ntype FavoriteUser {\r\n  id: ID!\r\n  userid: ID!\r\n  favoriteuserid: ID!\r\n}\r\n\r\ntype Query {\r\n  users: [User!]!\r\n  user(id: ID!): User!\r\n  userslug(slug: String!): User!\r\n\r\n  posts: [Post!]!\r\n  post(id: ID!): Post!\r\n  postslug(slug: String!): Post!\r\n  postuserid(userid: ID!): [Post!]!\r\n\r\n  comments: [Comment!]!\r\n  commentsbypostid(postid: ID!): [Comment!]!\r\n\r\n  bookmarks(userid: ID!): [Bookmark!]!\r\n\r\n\r\n}\r\n\r\ntype Mutation {\r\n  createUser(id: ID!, name: String!, email: String!, age: Int, uniquenickname: String!): User!\r\n  updateUser(id: ID!, name: String, email: String, age: Int): User!\r\n  deleteUser(id: ID!): User!\r\n\r\n\r\n  createPost(id: ID!, userid: ID!, title: String!, content: String!, slug: String!): Post!\r\n  updatePost(id: ID!, title: String!, content: String!, slug: String!): Post!\r\n  deletePost(id: ID!): Post!\r\n\r\n  createComment(id: ID!, userid: ID!, postid: ID!, content: String!): Comment!\r\n  deleteComment(id: ID!): Comment!\r\n\r\n  incrementViews(postid: ID!): Post\r\n  deleteBookmark(id: ID!): Bookmark!\r\n}\r\n","name":"GraphQL request","locationOffset":{"line":1,"column":1}};
   
 
     var names = {};

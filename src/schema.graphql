@@ -13,6 +13,7 @@ type Post {
   content: String!
   slug: String!
   lastupdate: String
+  views: Int
 }
 
 type Comment {
@@ -21,6 +22,18 @@ type Comment {
   postid: ID!
   content: String!
   lastupdate: String
+}
+
+type Bookmark {
+  id: ID!
+  userid: ID!
+  postid: ID!
+}
+
+type FavoriteUser {
+  id: ID!
+  userid: ID!
+  favoriteuserid: ID!
 }
 
 type Query {
@@ -35,6 +48,8 @@ type Query {
 
   comments: [Comment!]!
   commentsbypostid(postid: ID!): [Comment!]!
+
+  bookmarks(userid: ID!): [Bookmark!]!
 
 
 }
@@ -51,4 +66,7 @@ type Mutation {
 
   createComment(id: ID!, userid: ID!, postid: ID!, content: String!): Comment!
   deleteComment(id: ID!): Comment!
+
+  incrementViews(postid: ID!): Post
+  deleteBookmark(id: ID!): Bookmark!
 }
