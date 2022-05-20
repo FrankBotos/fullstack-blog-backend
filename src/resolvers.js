@@ -39,6 +39,9 @@ const resolvers = {
     bookmarks: (parent, { userid }, context, info) => {
       return bookmarks.filter(bookmark => bookmark.userid == userid);
     },
+    favoriteusers: (parent, { userid }, context, info) => {
+      return favoriteUsers.filter(favUser => favUser.userid == userid);
+    },
   },
 
   Mutation: {
@@ -76,62 +79,59 @@ const resolvers = {
       async function deleteAssociatedData(){
         //if a user is deleted, delete their bookmarks, their posts, their comments, and their favorited users
 
-        //1a.delete all bookmarks made by all users that are associated with their posts
-        const usersPosts = posts.filter((post) =>{
-          return post.userid == id;
-        })  
-        usersPosts.map((post) =>{
-          const bookmarksAfterAssociatedDelete = bookmarks.filter((bm) => {
-            return post.id != bm.postid;
-          })
-          if (bookmarksAfterAssociatedDelete.length != 0)
-          {
-            bookmarks.splice(0, bookmarks.length, ...bookmarksAfterAssociatedDelete);
-          }
-        });
-        
 
-        //1b.delete their bookmarks
-        const bookmarksAfterDelete = bookmarks.filter((bm) =>{
-          return bm.userid != id;
+
+        //1.delete all associated bookmarks (bookmarks belonging to deleted user, and bookmarks belonging to other users, who bookmarked deleted user's posts)
+        const userPosts = posts.filter((post) =>{
+          return post.userid == id;
         })
+
+        var bookmarksAfterDelete = bookmarks.filter((bm)=>{//first we remove all bookmarks saved by the user about to be deleted
+          return bm.userid != id
+        })
+
+        //next we iterate through deleted user's posts, and delete all bookmarks related to that post
+        userPosts.forEach((post)=>{
+          bookmarksAfterDelete = bookmarksAfterDelete.filter((bookmark)=>{
+            return bookmark.postid != post.id
+          })
+        })
+        //lastly we update the original bookmark list with our filtered values
         bookmarks.splice(0, bookmarks.length, ...bookmarksAfterDelete);
 
-        //2a.delete any favorite user entries that contained their account
-        users.map((user)=>{
-          const favoriteUsersAfterAssociatedDelete = favoriteUsers.filter((fu) => {
-            return fu.favoriteuserid != id
-          })
-          if(favoriteUsersAfterAssociatedDelete.length != 0) {
-            favoriteUsers.splice(0, favoriteUsers.length, ...favoriteUsersAfterAssociatedDelete);
-          }
-        })
 
-        //2b.delete their favorite user entries
-        const favoriteUsersAfterDelete = favoriteUsers.filter((fu) => {
-          return fu.userid != id;
-        })
-        favoriteUsers.splice(0, favoriteUsers.length, ...favoriteUsersAfterDelete);
 
-        
-        
-        //3.delete their comments
-        const commentsAfterDelete = comments.filter((comment) =>{
+        //2.delete associated favorites (favorites belonging to the deleted user, and favorites beloning to other users, who favorited to be deleted user)
+        var favsAfterDelete = favoriteUsers.filter((fav)=>{//delete favorite users beloning to user about to be deleted
+          return fav.userid != id;
+        })
+        favsAfterDelete = favsAfterDelete.filter((fav)=>{//delete user from other users' favorite lists
+          return fav.favoriteuserid != id;
+        })
+        //update favorites list with new values
+        favoriteUsers.splice(0, favoriteUsers.length, ...favsAfterDelete);
+
+
+
+        //3.delete all comments made by user, and all comments made by other users on their posts
+        var commentsAfterDelete=comments.filter((comment)=>{
           return comment.userid != id;
         })
+        userPosts.forEach((post)=>{
+          commentsAfterDelete = commentsAfterDelete.filter((comment)=>{
+            return comment.postid != post.id;
+          })
+        })
+        //update with new values
         comments.splice(0, comments.length, ...commentsAfterDelete);
 
-        //4a.delete comments from users associated with their posts
-
-        //4b.delete their posts
-        const postsAfterDelete = posts.filter((post) =>{
+        //4.finally, we delete the user's posts
+        var postsAfterDelete = posts.filter((post)=>{
           return post.userid != id;
         })
         posts.splice(0, posts.length, ...postsAfterDelete);
-
-
-
-
+        //console.log(posts);
+        
 
       }
       deleteAssociatedData();
@@ -194,6 +194,18 @@ const resolvers = {
       return newPost;
     },
     deletePost: (parent, { id }, context, info) => {
+
+      //when a post is deleted, we must also delete all bookmarks referencing that post, and all comments for that post
+      var bookmarksAfterDelete = bookmarks.filter((bookmark)=>{
+        return bookmark.postid != id;
+      })
+      bookmarks.splice(0, bookmarks.length, ...bookmarksAfterDelete);
+      var commentsAfterDelete = comments.filter((comment)=>{
+        return comment.postid != id;
+      })
+      comments.splice(0, comments.length, ...commentsAfterDelete);
+
+
       
       const postIndex = posts.findIndex(post => post.id == id);
 
@@ -232,6 +244,13 @@ const resolvers = {
       postRef.views++;
       return postRef;
     },
+    createBookmark: (parent, { id, userid, postid }, context, info) => {
+
+      const newBookmark = { id, userid, postid };
+      bookmarks.push(newBookmark);
+
+      return newBookmark;
+    },
     deleteBookmark: (parent, { id }, context, info) => {
       
       const bmIndex = bookmarks.findIndex(bm => bm.id == id);
@@ -242,6 +261,24 @@ const resolvers = {
       const bookmarksAfterDelete = bookmarks.splice(bmIndex, 1);
 
       return bookmarksAfterDelete[0];
+    },
+    deleteFavoriteUser: (parent, { id }, context, info) => {
+      
+      const favIndex = favoriteUsers.findIndex(fav => fav.id == id);
+      //console.log(bmIndex);
+
+      if (favIndex === -1) throw new Error("Favorite user not found.");
+
+      const favoriteUsersAfterDelete = favoriteUsers.splice(favIndex, 1);
+
+      return favoriteUsersAfterDelete[0];
+    },
+    createFavoriteUser: (parent, { id, userid, favoriteuserid }, context, info) => {
+
+      const newFav = { id, userid, favoriteuserid };
+      favoriteUsers.push(newFav);
+
+      return newFav;
     },
 
 

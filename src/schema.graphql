@@ -50,6 +50,7 @@ type Query {
   commentsbypostid(postid: ID!): [Comment!]!
 
   bookmarks(userid: ID!): [Bookmark!]!
+  favoriteusers(userid: ID!) : [FavoriteUser!]!
 
 
 }
@@ -68,5 +69,10 @@ type Mutation {
   deleteComment(id: ID!): Comment!
 
   incrementViews(postid: ID!): Post
+
+  createBookmark(id: ID!, userid: ID!, postid: ID!): Bookmark!
   deleteBookmark(id: ID!): Bookmark!
+
+  createFavoriteUser(id: ID!, userid: ID!, favoriteuserid: ID!): FavoriteUser!
+  deleteFavoriteUser(id: ID!): FavoriteUser!
 }
