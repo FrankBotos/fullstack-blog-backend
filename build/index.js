@@ -441,7 +441,7 @@ let posts = [{
   title: "Blog Post 2",
   content: "This is content for blog post 2",
   slug: "blog-post-2",
-  lastupdate: "Wed May 11 2022",
+  lastupdate: "Sat May 14 2022",
   views: 0
 }, {
   id: 3,
@@ -457,7 +457,7 @@ let posts = [{
   title: "Test Post",
   content: "This is content for blog post 4",
   slug: "test-post",
-  lastupdate: "Wed May 11 2022",
+  lastupdate: "Sun May 15 2022",
   views: 0
 }, {
   id: 5,
@@ -473,7 +473,7 @@ let posts = [{
   title: "Another Entry",
   content: "This is content for blog post 6",
   slug: "another-entry",
-  lastupdate: "Wed May 11 2022",
+  lastupdate: "Sat May 21 2022",
   views: 0
 }];
 let comments = [{
@@ -487,13 +487,13 @@ let comments = [{
   userid: 2,
   postid: 3,
   content: "This is content for comment 2",
-  lastupdate: "Wed May 11 2022"
+  lastupdate: "Sat May 14 2022"
 }, {
   id: 3,
   userid: 3,
   postid: 2,
   content: "This is content for comment 3",
-  lastupdate: "Wed May 11 2022"
+  lastupdate: "Sun May 15 2022"
 }, {
   id: 4,
   userid: 3,
