@@ -1,7 +1,7 @@
 export let users = [
-    { id: 1, name: "John Doe", email: "john@gmail.com", age: 22, uniquenickname: "john-doe" },
-    { id: 2, name: "Jane Doe", email: "jane@gmail.com", age: 23, uniquenickname: "jane-doe" },
-    { id: 3, name: "Person Three", email: "personthree@gmail.com", age: 25, uniquenickname: "person-three" }
+    { id: 1, name: "John Doe", email: "john@gmail.com", age: 22, uniquenickname: "john-doe", password: 'placeholder' },
+    { id: 2, name: "Jane Doe", email: "jane@gmail.com", age: 23, uniquenickname: "jane-doe", password: 'placeholder' },
+    { id: 3, name: "Person Three", email: "personthree@gmail.com", age: 25, uniquenickname: "person-three", password: 'placeholder' },
   ];  
 
   export let posts  = [

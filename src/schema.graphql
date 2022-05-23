@@ -4,6 +4,7 @@ type User {
   email: String!
   age: Int
   uniquenickname: String!
+  password: String!
 }
 
 type Post {
@@ -52,11 +53,13 @@ type Query {
   bookmarks(userid: ID!): [Bookmark!]!
   favoriteusers(userid: ID!) : [FavoriteUser!]!
 
+  userLogin(username: String!, password: String!): User!
+
 
 }
 
 type Mutation {
-  createUser(id: ID!, name: String!, email: String!, age: Int, uniquenickname: String!): User!
+  createUser(id: ID!, name: String!, email: String!, age: Int, uniquenickname: String!, password: String!): User!
   updateUser(id: ID!, name: String, email: String, age: Int): User!
   deleteUser(id: ID!): User!
 

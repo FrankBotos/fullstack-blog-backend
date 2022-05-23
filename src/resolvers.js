@@ -1,5 +1,41 @@
 import { users, posts, comments, bookmarks, favoriteUsers } from "./db";
 
+
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+const myPlaintextPassword = 's0/\/\P4$$w0rD';
+const someOtherPlaintextPassword = 'not_bacon';
+var hashToCompare = null;
+bcrypt.hash(myPlaintextPassword, saltRounds, function(err, hash) {
+  // Store hash in your password DB.
+  //console.log(hash)
+  //hashToCompare = hash;
+});
+// Load hash from your password DB.
+bcrypt.compare(myPlaintextPassword, hashToCompare, function(err, result) {
+  // result == true
+  //console.log('match')
+});
+bcrypt.compare(someOtherPlaintextPassword, hashToCompare, function(err, result) {
+  // result == false
+  //console.log('not match')
+});
+
+
+//manually hash passwords for hardcoded users, so we have initial data to work with
+//for new users, this process takes place in "createuser"
+users.map((user)=>{
+  if(user.password == "placeholder"){
+    bcrypt.hash(user.password, saltRounds, function(err, hash) {
+      user.password = hash;
+    });
+  }
+})
+
+
+
+
+
 const resolvers = {
 
   Query: {
@@ -42,11 +78,31 @@ const resolvers = {
     favoriteusers: (parent, { userid }, context, info) => {
       return favoriteUsers.filter(favUser => favUser.userid == userid);
     },
+    userLogin: async (parent, { username, password }, context, info) => {
+
+      var index = users.findIndex(user => user.uniquenickname == username);
+
+
+      if(index != -1) {
+        const res = await bcrypt.compare(password, users.at(index).password);
+        if (res != true) {
+          throw new Error("Inccorect pass!")
+        }
+      } else {
+        throw new Error("That user does not exist!");
+      }
+
+      //if we passed all checks, user is logged in, and we return user info
+      return users.at(index);
+      
+
+    },
   },
 
   Mutation: {
-    createUser: (parent, { id, name, email, age, uniquenickname }, context, info) => {
-      const newUser = { id, name, email, age, uniquenickname };
+    createUser: (parent, { id, name, email, age, uniquenickname, password }, context, info) => {
+
+      const newUser = { id, name, email, age, uniquenickname, password };
 
       users.map((user)=>{
         if (newUser.uniquenickname == user.uniquenickname)
@@ -57,6 +113,17 @@ const resolvers = {
       })
 
       users.push(newUser);
+
+      //find new user by id, and hash the password
+      users.forEach((user)=>{
+        if(user.id==id){
+          bcrypt.hash(user.password, saltRounds, function(err, hash) {
+            user.password = hash;
+          });
+        }
+      })
+
+
 
       return newUser;
     },
