@@ -5,6 +5,7 @@ type User {
   age: Int
   uniquenickname: String!
   password: String!
+  profileimage: String
 }
 
 type Post {
@@ -15,6 +16,7 @@ type Post {
   slug: String!
   lastupdate: String
   views: Int
+  coverimage: String
 }
 
 type Comment {
@@ -64,8 +66,8 @@ type Mutation {
   deleteUser(id: ID!): User!
 
 
-  createPost(id: ID!, userid: ID!, title: String!, content: String!, slug: String!): Post!
-  updatePost(id: ID!, title: String!, content: String!, slug: String!): Post!
+  createPost(id: ID!, userid: ID!, title: String!, content: String!, slug: String!, coverimage: String!): Post!
+  updatePost(id: ID!, title: String!, content: String!, slug: String!, coverimage: String!): Post!
   deletePost(id: ID!): Post!
 
   createComment(id: ID!, userid: ID!, postid: ID!, content: String!): Comment!
@@ -78,4 +80,6 @@ type Mutation {
 
   createFavoriteUser(id: ID!, userid: ID!, favoriteuserid: ID!): FavoriteUser!
   deleteFavoriteUser(id: ID!): FavoriteUser!
+
+  updateProfileImage(userid: ID!, imgurl: String!): User!
 }

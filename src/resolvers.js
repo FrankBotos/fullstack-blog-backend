@@ -136,6 +136,13 @@ const resolvers = {
 
       return newUser;
     },
+    updateProfileImage: (parent, { userid, imgurl }, context, info) => {
+      let newUser = users.find(user => user.id == userid);
+
+      newUser.profileimage = imgurl;
+
+      return newUser;
+    },
     deleteUser: (parent, { id }, context, info) => {
       
       const userIndex = users.findIndex(user => user.id == id);
@@ -208,14 +215,14 @@ const resolvers = {
       return deletedUsers[0];
     },
 
-    createPost: (parent, { id, userid, title, content, slug }, context, info) => {
+    createPost: (parent, { id, userid, title, content, slug, coverimage }, context, info) => {
       var lastupdate = new Date(Date.now()).toDateString();
       //console.log(updateTime);
 
       //console.log('ran with' + content);
 
       var views = 0;
-      const newPost = { id, userid, title, content, slug, lastupdate, views };
+      const newPost = { id, userid, title, content, slug, lastupdate, views, coverimage };
 
       const userPosts = posts.filter((blogpost)=>{
         return blogpost.userid == userid;
@@ -230,7 +237,7 @@ const resolvers = {
       posts.push(newPost);
       return newPost;
     },
-    updatePost: (parent, { id, title, content, slug }, context, info) => {
+    updatePost: (parent, { id, title, content, slug, coverimage }, context, info) => {
 
       var lastupdate = new Date(Date.now()).toDateString();
 
@@ -257,6 +264,7 @@ const resolvers = {
       newPost.content = content;
       newPost.slug = slug;
       newPost.lastupdate = lastupdate;
+      newPost.coverimage = coverimage;
 
       return newPost;
     },
